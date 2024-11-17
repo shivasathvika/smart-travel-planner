@@ -75,7 +75,20 @@
     </style>
     
     <!-- Google APIs -->
-    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAT4ARfY-W3O2I56FBX3rbHevxvfCcfdwY&libraries=places"></script>
+    <script>
+        // Load Google Maps API dynamically
+        function loadGoogleMapsAPI() {
+            const script = document.createElement('script');
+            script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.GOOGLE_MAPS_API_KEY}&libraries=places`;
+            script.async = true;
+            script.defer = true;
+            script.onload = initMap;
+            document.head.appendChild(script);
+        }
+        
+        // Call this when the page loads
+        window.onload = loadGoogleMapsAPI;
+    </script>
     
     <script>
         // Google Maps API Integration - Search for a place
@@ -180,7 +193,7 @@
         }
     </script>
 </head>
-<body onload="initMap()">
+<body>
     <header>
         <div class="container">
             <h1>Smart Travel Planner</h1>
@@ -286,7 +299,7 @@
     </main>
 
     <footer>
-        <p>© 2024 Smart Travel Planner | All Rights Reserved</p>
+        <p> 2024 Smart Travel Planner | All Rights Reserved</p>
     </footer>
 </body>
 </html>
