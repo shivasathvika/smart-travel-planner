@@ -13,7 +13,7 @@ from datetime import timedelta
 from models import Base
 from schemas import UserCreate, User, Token
 from database import engine, get_db
-from routers import auth, users, weather, places, travel_plans
+from routers import auth_router, users_router, weather_router, places_router, travel_plans_router
 from services.email_service import EmailService
 from services.weather_service import WeatherService
 
@@ -29,25 +29,25 @@ app = FastAPI(
 # CORS middleware configuration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=["*"],  # Allows all origins in development
     allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allow_headers=["*"],
+    allow_methods=["*"],  # Allows all methods
+    allow_headers=["*"],  # Allows all headers
 )
 
 # Include routers
-app.include_router(auth.router)
-app.include_router(users.router)
-app.include_router(weather.router)
-app.include_router(places.router)
-app.include_router(travel_plans.router)
+app.include_router(auth_router, prefix="/api", tags=["Authentication"])
+app.include_router(users_router, prefix="/api/users", tags=["Users"])
+app.include_router(weather_router, prefix="/api/weather", tags=["Weather"])
+app.include_router(places_router, prefix="/api/places", tags=["Places"])
+app.include_router(travel_plans_router, prefix="/api/travel-plans", tags=["Travel Plans"])
 
 @app.get("/")
-def root():
-    return {"message": "Smart Travel Planner API is running"}
+async def root():
+    return {"message": "Welcome to Smart Travel Planner API"}
 
 # Authentication endpoints
-@app.post("/token", response_model=Token)
+@app.post("/api/token", response_model=Token)
 async def login_for_access_token(
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db)
@@ -67,6 +67,7 @@ async def login_for_access_token(
 
 # Initialize email reminder scheduler
 def setup_reminder_scheduler():
-    # Add implementation for setting up the email reminder scheduler
+    # Initialize your scheduler here
     pass
+
 setup_reminder_scheduler()

@@ -12,7 +12,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import models
 import schemas
 from auth import get_current_active_user, get_password_hash, verify_password, create_access_token, authenticate_user
-import database
+from database import get_db
 import secrets
 import smtplib
 from email.mime.text import MIMEText
@@ -21,11 +21,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-router = APIRouter(
-    prefix="/api/auth",
-    tags=["authentication"]
-)
-
+router = APIRouter()
 # Email configuration
 EMAIL_HOST = os.getenv("EMAIL_HOST", "smtp.gmail.com")
 EMAIL_PORT = int(os.getenv("EMAIL_PORT", "587"))
@@ -76,7 +72,7 @@ def send_reset_email(email: str, token: str, base_url: str):
 @router.post("/signin", response_model=schemas.Token)
 async def sign_in(
     form_data: OAuth2PasswordRequestForm = Depends(),
-    db: Session = Depends(database.get_db)
+    db: Session = Depends(get_db)
 ):
     user = authenticate_user(db, form_data.username, form_data.password)
     if not user:
@@ -92,7 +88,7 @@ async def sign_in(
     return {"access_token": access_token, "token_type": "bearer"}
 
 @router.post("/signup", response_model=schemas.User)
-async def sign_up(user: schemas.UserCreate, db: Session = Depends(database.get_db)):
+async def sign_up(user: schemas.UserCreate, db: Session = Depends(get_db)):
     db_user = db.query(models.User).filter(models.User.email == user.email).first()
     if db_user:
         raise HTTPException(status_code=400, detail="Email already registered")
@@ -111,7 +107,7 @@ async def sign_up(user: schemas.UserCreate, db: Session = Depends(database.get_d
 @router.post("/forgot-password")
 async def forgot_password(
     email: schemas.EmailSchema,
-    db: Session = Depends(database.get_db)
+    db: Session = Depends(get_db)
 ):
     user = db.query(models.User).filter(models.User.email == email.email).first()
     if not user:
@@ -140,7 +136,7 @@ async def forgot_password(
 @router.post("/reset-password")
 async def reset_password(
     reset_data: schemas.PasswordReset,
-    db: Session = Depends(database.get_db)
+    db: Session = Depends(get_db)
 ):
     user = db.query(models.User).filter(
         models.User.reset_token == reset_data.token,
@@ -165,7 +161,7 @@ async def reset_password(
 async def change_password(
     password_data: schemas.PasswordChange,
     current_user: models.User = Depends(get_current_active_user),
-    db: Session = Depends(database.get_db)
+    db: Session = Depends(get_db)
 ):
     if not verify_password(password_data.current_password, current_user.hashed_password):
         raise HTTPException(
@@ -186,7 +182,7 @@ async def get_current_user(current_user: models.User = Depends(get_current_activ
 async def update_profile(
     profile: schemas.UserUpdate,
     current_user: models.User = Depends(get_current_active_user),
-    db: Session = Depends(database.get_db)
+    db: Session = Depends(get_db)
 ):
     if profile.email and profile.email != current_user.email:
         # Check if new email is already taken
