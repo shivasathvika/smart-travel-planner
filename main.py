@@ -1,15 +1,20 @@
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
 import os
 import sys
+from fastapi import FastAPI, Depends
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.security import OAuth2PasswordRequestForm
+from sqlalchemy.orm import Session
+from datetime import timedelta
 
 # Add the current directory to the Python path
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from backend.models import Base
-from backend.database import engine
+from backend.database import engine, get_db
 from backend.routers import auth_router, users_router, weather_router, places_router, travel_plans_router
+from backend.auth import authenticate_user, create_access_token
+from backend.schemas import Token
 
 # Create database tables
 Base.metadata.create_all(bind=engine)
@@ -42,3 +47,15 @@ app.include_router(travel_plans_router, prefix="/api/travel-plans", tags=["Trave
 @app.get("/")
 async def root():
     return {"message": "Welcome to Smart Travel Planner API"}
+
+@app.post("/api/token", response_model=Token)
+async def login_for_access_token(
+    form_data: OAuth2PasswordRequestForm = Depends(),
+    db: Session = Depends(get_db)
+):
+    user = authenticate_user(db, form_data.username, form_data.password)
+    access_token_expires = timedelta(minutes=30)
+    access_token = create_access_token(
+        data={"sub": user.email}, expires_delta=access_token_expires
+    )
+    return {"access_token": access_token, "token_type": "bearer"}

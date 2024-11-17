@@ -5,17 +5,12 @@ from datetime import datetime, timedelta
 from typing import Optional
 import PyJWT as jwt
 from passlib.context import CryptContext
-import sys
 import os
 from dotenv import load_dotenv
 
-# Add the parent directory to the Python path
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-import models
-import schemas
-import database
-from database import get_db
+from .models import User
+from .schemas import TokenData
+from .database import get_db
 
 load_dotenv()
 
@@ -25,7 +20,7 @@ ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="signin")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/token")
 
 def verify_password(plain_password: str, hashed_password: str):
     return pwd_context.verify(plain_password, hashed_password)
@@ -34,7 +29,7 @@ def get_password_hash(password: str):
     return pwd_context.hash(password)
 
 def authenticate_user(db: Session, email: str, password: str):
-    user = db.query(models.User).filter(models.User.email == email).first()
+    user = db.query(User).filter(User.email == email).first()
     if not user:
         return False
     if not verify_password(password, user.hashed_password):
@@ -62,16 +57,16 @@ async def get_current_user(db: Session = Depends(get_db), token: str = Depends(o
         email: str = payload.get("sub")
         if email is None:
             raise credentials_exception
-        token_data = schemas.TokenData(email=email)
+        token_data = TokenData(email=email)
     except jwt.JWTError:
         raise credentials_exception
     
-    user = db.query(models.User).filter(models.User.email == token_data.email).first()
+    user = db.query(User).filter(User.email == token_data.email).first()
     if user is None:
         raise credentials_exception
     return user
 
-async def get_current_active_user(current_user: models.User = Depends(get_current_user)):
+async def get_current_active_user(current_user: User = Depends(get_current_user)):
     if not current_user.is_active:
         raise HTTPException(status_code=400, detail="Inactive user")
     return current_user
