@@ -3,7 +3,7 @@ from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
 from typing import Optional
-import jwt
+import PyJWT as jwt
 from passlib.context import CryptContext
 import sys
 import os
