@@ -11,7 +11,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import models
 import schemas
-import auth
+from auth import get_current_active_user, get_password_hash, verify_password, create_access_token, authenticate_user
 import database
 import secrets
 import smtplib
@@ -78,15 +78,15 @@ async def sign_in(
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(database.get_db)
 ):
-    user = auth.authenticate_user(db, form_data.username, form_data.password)
+    user = authenticate_user(db, form_data.username, form_data.password)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    access_token_expires = timedelta(minutes=auth.ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = auth.create_access_token(
+    access_token_expires = timedelta(minutes=60)
+    access_token = create_access_token(
         data={"sub": user.email}, expires_delta=access_token_expires
     )
     return {"access_token": access_token, "token_type": "bearer"}
@@ -97,7 +97,7 @@ async def sign_up(user: schemas.UserCreate, db: Session = Depends(database.get_d
     if db_user:
         raise HTTPException(status_code=400, detail="Email already registered")
     
-    hashed_password = auth.get_password_hash(user.password)
+    hashed_password = get_password_hash(user.password)
     db_user = models.User(
         email=user.email,
         hashed_password=hashed_password,
@@ -154,7 +154,7 @@ async def reset_password(
         )
     
     # Update password
-    user.hashed_password = auth.get_password_hash(reset_data.new_password)
+    user.hashed_password = get_password_hash(reset_data.new_password)
     user.reset_token = None
     user.reset_token_expires = None
     db.commit()
@@ -164,28 +164,28 @@ async def reset_password(
 @router.post("/change-password")
 async def change_password(
     password_data: schemas.PasswordChange,
-    current_user: models.User = Depends(auth.get_current_active_user),
+    current_user: models.User = Depends(get_current_active_user),
     db: Session = Depends(database.get_db)
 ):
-    if not auth.verify_password(password_data.current_password, current_user.hashed_password):
+    if not verify_password(password_data.current_password, current_user.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Incorrect current password"
         )
     
-    current_user.hashed_password = auth.get_password_hash(password_data.new_password)
+    current_user.hashed_password = get_password_hash(password_data.new_password)
     db.commit()
     
     return {"message": "Password changed successfully"}
 
 @router.get("/me", response_model=schemas.User)
-async def get_current_user(current_user: models.User = Depends(auth.get_current_active_user)):
+async def get_current_user(current_user: models.User = Depends(get_current_active_user)):
     return current_user
 
 @router.put("/profile", response_model=schemas.User)
 async def update_profile(
     profile: schemas.UserUpdate,
-    current_user: models.User = Depends(auth.get_current_active_user),
+    current_user: models.User = Depends(get_current_active_user),
     db: Session = Depends(database.get_db)
 ):
     if profile.email and profile.email != current_user.email:

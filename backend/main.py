@@ -1,8 +1,8 @@
 import sys
 import os
 
-# Add the current directory to the Python path
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+# Add the parent directory to the Python path
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
@@ -10,12 +10,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from datetime import timedelta
 
-from backend.models import Base
-from backend.schemas import UserCreate, User, Token
-from backend.database import engine, get_db
-from backend.routers import auth, users, weather, places, travel_plans
-from backend.services.email_service import EmailService
-from backend.services.weather_service import WeatherService
+from models import Base
+from schemas import UserCreate, User, Token
+from database import engine, get_db
+from routers import auth, users, weather, places, travel_plans
+from services.email_service import EmailService
+from services.weather_service import WeatherService
 
 # Create database tables
 Base.metadata.create_all(bind=engine)
