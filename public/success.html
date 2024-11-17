@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Trips - Smart Travel Planner</title>
+    <link rel="manifest" href="/manifest.json">
+    <link rel="stylesheet" href="/styles.css">
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="/">Smart Travel Planner</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/planning.html">New Trip</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/success.html">My Trips</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/about.html">About</a>
+                    </li>
+                </ul>
+                <div class="d-flex">
+                    <button id="logout-btn" class="btn btn-light">Logout</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-5">
+        <h1>My Travel Plans</h1>
+        
+        <!-- Trip filters -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="input-group">
+                    <input type="text" id="search-trips" class="form-control" placeholder="Search trips...">
+                    <button class="btn btn-outline-secondary" type="button">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <select id="trip-filter" class="form-select">
+                    <option value="all">All Trips</option>
+                    <option value="upcoming">Upcoming</option>
+                    <option value="past">Past</option>
+                    <option value="draft">Drafts</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Trip cards container -->
+        <div id="trips-container" class="row">
+            <!-- Trip cards will be dynamically inserted here -->
+            <div class="col-12 text-center" id="loading-spinner">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Empty state -->
+        <div id="empty-state" class="text-center py-5" style="display: none;">
+            <i class="fas fa-suitcase-rolling fa-3x mb-3 text-muted"></i>
+            <h3>No trips found</h3>
+            <p class="text-muted">Start planning your next adventure!</p>
+            <a href="/planning.html" class="btn btn-primary">Create New Trip</a>
+        </div>
+    </div>
+
+    <!-- Trip Details Modal -->
+    <div class="modal fade" id="tripModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Trip Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Trip details will be dynamically inserted here -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" id="edit-trip-btn">Edit Trip</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Check authentication
+        document.addEventListener('DOMContentLoaded', () => {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                window.location.href = '/signin.html';
+                return;
+            }
+            loadTrips();
+        });
+
+        // Load user's trips
+        async function loadTrips() {
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch('/api/travel-plans', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    displayTrips(data.trips);
+                } else {
+                    throw new Error(data.error);
+                }
+            } catch (error) {
+                console.error('Error loading trips:', error);
+                showErrorMessage('Failed to load trips');
+            } finally {
+                document.getElementById('loading-spinner').style.display = 'none';
+            }
+        }
+
+        // Display trips in cards
+        function displayTrips(trips) {
+            const container = document.getElementById('trips-container');
+            const emptyState = document.getElementById('empty-state');
+
+            if (!trips || trips.length === 0) {
+                emptyState.style.display = 'block';
+                container.innerHTML = '';
+                return;
+            }
+
+            emptyState.style.display = 'none';
+            container.innerHTML = trips.map(trip => `
+                <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">${trip.destination}</h5>
+                            <h6 class="card-subtitle mb-2 text-muted">
+                                ${new Date(trip.startDate).toLocaleDateString()} - 
+                                ${new Date(trip.endDate).toLocaleDateString()}
+                            </h6>
+                            <p class="card-text">
+                                <i class="fas fa-money-bill-wave"></i> Budget: $${trip.budget}<br>
+                                <i class="fas fa-tag"></i> Style: ${trip.mood}
+                            </p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <button class="btn btn-outline-primary btn-sm" 
+                                        onclick="viewTripDetails('${trip._id}')">
+                                    View Details
+                                </button>
+                                <div class="dropdown">
+                                    <button class="btn btn-link text-muted" 
+                                            data-bs-toggle="dropdown">
+                                        <i class="fas fa-ellipsis-v"></i>
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        <li>
+                                            <a class="dropdown-item" href="#" 
+                                               onclick="editTrip('${trip._id}')">
+                                                <i class="fas fa-edit"></i> Edit
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item" href="#" 
+                                               onclick="shareTrip('${trip._id}')">
+                                                <i class="fas fa-share"></i> Share
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item text-danger" href="#" 
+                                               onclick="deleteTrip('${trip._id}')">
+                                                <i class="fas fa-trash"></i> Delete
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // View trip details
+        async function viewTripDetails(tripId) {
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch(`/api/travel-plan/${tripId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                const trip = await response.json();
+
+                if (response.ok) {
+                    const modal = document.querySelector('#tripModal');
+                    const modalBody = modal.querySelector('.modal-body');
+                    modalBody.innerHTML = `
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h4>${trip.destination}</h4>
+                                <p>
+                                    <strong>Dates:</strong><br>
+                                    ${new Date(trip.startDate).toLocaleDateString()} - 
+                                    ${new Date(trip.endDate).toLocaleDateString()}
+                                </p>
+                                <p>
+                                    <strong>Budget:</strong> $${trip.budget}<br>
+                                    <strong>Style:</strong> ${trip.mood}
+                                </p>
+                            </div>
+                            <div class="col-md-6">
+                                <h5>Weather Forecast</h5>
+                                <div id="modal-weather"></div>
+                            </div>
+                        </div>
+                        <hr>
+                        <div class="row">
+                            <div class="col-12">
+                                <h5>Places to Visit</h5>
+                                <div id="modal-places"></div>
+                            </div>
+                        </div>
+                    `;
+
+                    // Initialize the Bootstrap modal
+                    const modalInstance = new bootstrap.Modal(modal);
+                    modalInstance.show();
+
+                    // Load weather and places data
+                    fetchWeatherData(trip.destination, trip.startDate, trip.endDate, 'modal-weather');
+                    fetchPlacesData(trip.destination, trip.mood, 'modal-places');
+                } else {
+                    throw new Error(trip.error);
+                }
+            } catch (error) {
+                console.error('Error loading trip details:', error);
+                showErrorMessage('Failed to load trip details');
+            }
+        }
+
+        // Handle logout
+        document.getElementById('logout-btn').addEventListener('click', () => {
+            localStorage.removeItem('token');
+            localStorage.removeItem('userId');
+            window.location.href = '/signin.html';
+        });
+
+        // Handle trip filtering
+        document.getElementById('trip-filter').addEventListener('change', (e) => {
+            const filter = e.target.value;
+            loadTrips(filter);
+        });
+
+        // Handle trip search
+        let searchTimeout;
+        document.getElementById('search-trips').addEventListener('input', (e) => {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                const searchTerm = e.target.value.toLowerCase();
+                loadTrips(undefined, searchTerm);
+            }, 300);
+        });
+
+        // Show error message
+        function showErrorMessage(message) {
+            const container = document.getElementById('trips-container');
+            container.innerHTML = `
+                <div class="col-12">
+                    <div class="alert alert-danger" role="alert">
+                        ${message}
+                    </div>
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>

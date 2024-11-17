@@ -1,0 +1,112 @@
+.profile-container {
+  padding: 2rem;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.profile-container h1 {
+  color: #2193b0;
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.trips-section {
+  background: white;
+  padding: 2rem;
+  border-radius: 10px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.trips-section h2 {
+  color: #2193b0;
+  margin-bottom: 1.5rem;
+}
+
+.no-trips {
+  text-align: center;
+  color: #666;
+  font-size: 1.1rem;
+  padding: 2rem;
+  background: #f8f9fa;
+  border-radius: 5px;
+}
+
+.trips-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 2rem;
+}
+
+.trip-card {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.trip-card h3 {
+  color: #2193b0;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #f0f0f0;
+}
+
+.locations-list {
+  margin-bottom: 1.5rem;
+}
+
+.location-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.8rem;
+  background: #f8f9fa;
+  border-radius: 5px;
+  margin-bottom: 0.5rem;
+}
+
+.location-item:last-child {
+  margin-bottom: 0;
+}
+
+.location-item .date {
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.delete-button {
+  width: 100%;
+  padding: 0.8rem;
+  background: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.delete-button:hover {
+  background: #c82333;
+}
+
+.loading {
+  text-align: center;
+  color: #666;
+  font-size: 1.2rem;
+  margin: 2rem 0;
+}
+
+.error-message {
+  color: #dc3545;
+  text-align: center;
+  margin: 1rem 0;
+  padding: 1rem;
+  background: #f8d7da;
+  border-radius: 5px;
+}
+
+@media (max-width: 768px) {
+  .trips-list {
+    grid-template-columns: 1fr;
+  }
+}

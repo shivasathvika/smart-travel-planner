@@ -1,0 +1,6 @@
+@echo off
+echo Stopping Node.js processes...
+taskkill /F /IM node.exe
+echo Stopping Python processes...
+taskkill /F /IM python.exe
+echo Cleanup complete!

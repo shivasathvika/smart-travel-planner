@@ -1,0 +1,47 @@
+{
+  "name": "smart-travel-planner",
+  "version": "1.0.0",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon -r dotenv/config server.js",
+    "test": "jest"
+  },
+  "dependencies": {
+    "@react-google-maps/api": "^2.20.3",
+    "bcryptjs": "^2.4.3",
+    "body-parser": "^1.20.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.0.3",
+    "express": "^4.21.1",
+    "express-rate-limit": "^6.7.0",
+    "helmet": "^7.0.0",
+    "jsonwebtoken": "^9.0.0",
+    "mongoose": "^8.8.1",
+    "morgan": "^1.10.0",
+    "multer": "^1.4.5-lts.1",
+    "node-fetch": "^2.6.1",
+    "nodemailer": "^6.9.1",
+    "socket.io": "^4.6.1",
+    "web-push": "^3.6.7",
+    "winston": "^3.8.2",
+    "workbox-webpack-plugin": "^6.5.4"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.21.4",
+    "@babel/preset-env": "^7.21.4",
+    "babel-jest": "^29.5.0",
+    "jest": "^29.5.0",
+    "nodemon": "^2.0.22",
+    "supertest": "^6.3.3"
+  },
+  "keywords": [
+    "travel",
+    "planner",
+    "itinerary"
+  ],
+  "author": "",
+  "license": "ISC",
+  "description": "Smart Travel Planner Application"
+}

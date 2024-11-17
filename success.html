@@ -1,0 +1,67 @@
+<!-- Inside your existing success.html file -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Success - Smart Travel Planner</title>
+    <link rel="stylesheet" href="signinstyle.css">
+    <style>
+        #generated-plan {
+            padding: 20px;
+            background-color: #f9f9f9;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            margin-top: 20px;
+            width: 80%;
+            max-width: 1000px;
+            margin: 20px auto;
+        }
+
+        #success-message {
+            font-size: 24px;
+            color: green;
+            text-align: center;
+            margin-top: 50px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>Smart Travel Planner</h1>
+            <nav>
+                <ul>
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="about.html">About</a></li>
+                    <li><a href="logout.html">Logout</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <div id="success-message">Your Travel Plan has been successfully created!</div>
+        <div id="generated-plan">
+            <h3>Your Customized Travel Plan:</h3>
+            <p id="plan-details"></p>
+        </div>
+    </main>
+
+    <footer>
+        <p>© 2024 Smart Travel Planner | All Rights Reserved</p>
+    </footer>
+
+    <script>
+        // Get the travel plan from sessionStorage
+        const travelPlan = JSON.parse(sessionStorage.getItem('travelPlan'));
+
+        if (travelPlan) {
+            // Display the travel plan details in the generated plan section
+            document.getElementById('plan-details').innerText = JSON.stringify(travelPlan, null, 2);
+        } else {
+            document.getElementById('success-message').innerText = "No travel plan found!";
+        }
+    </script>
+</body>
+</html>

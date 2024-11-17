@@ -1,0 +1,80 @@
+.App {
+  font-family: Arial, sans-serif;
+  max-width: 800px;
+  margin: 20px auto;
+  padding: 20px;
+  background-color: #f0f0f0;
+  border-radius: 8px;
+}
+
+h1 {
+  color: #2a9d8f;
+  text-align: center;
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+label {
+  font-weight: bold;
+}
+
+input[type="text"],
+input[type="number"],
+input[type="date"] {
+  padding: 8px;
+  font-size: 1rem;
+  width: 100%;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+}
+
+button {
+  padding: 10px;
+  background-color: #2a9d8f;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: #21867a;
+}
+
+.travel-plan {
+  margin-top: 30px;
+  background-color: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+pre {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+/* Mobile-first approach */
+@media (max-width: 768px) {
+    .App {
+      padding: 10px;
+    }
+  
+    form {
+      flex-direction: column;
+    }
+  
+    button {
+      padding: 8px;
+      font-size: 1rem;
+    }
+  }
+  
+  .travel-plan pre {
+    font-size: 0.9rem;
+  }
+  
