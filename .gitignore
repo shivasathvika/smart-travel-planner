@@ -35,6 +35,7 @@ ENV/
 # Database
 *.db
 *.sqlite3
+instance/
 
 # Logs
 *.log
@@ -45,24 +46,45 @@ log/
 .env
 .env.local
 .env.*.local
+.env.development
+.env.test
+.env.production
 
 # System Files
 .DS_Store
 Thumbs.db
 
-# Node modules (if using npm)
-node_modules/
-
-# Distribution
-dist/
-build/
-
-# Testing
-coverage/
+# Coverage reports
 .coverage
 htmlcov/
 
-# Temporary files
-*.tmp
-*.temp
-*.bak
+# Test cache
+.pytest_cache/
+__pycache__/
+.cache/
+
+# Deployment specific
+*.pem
+*.key
+*.crt
+.vercel
+.build/
+dist/
+build/
+
+# API Keys and Secrets
+google_credentials.json
+*_api_key.txt
+*_secret.txt
+secrets.yaml
+credentials.json
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Local database
+travel_planner.db
+*.sqlite
