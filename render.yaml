@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: smart-travel-planner
+    env: python
+    region: oregon
+    plan: free
+    buildCommand: |
+      pip install -r requirements.txt
+      mkdir -p instance
+      ln -s /opt/render/project/src/backend/schemas /opt/render/project/src/schemas
+    startCommand: |
+      python -c "from backend.database import init_db; init_db()"
+      uvicorn backend.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: DATABASE_URL
+        value: sqlite:///instance/travel_planner.db
+      - key: ENVIRONMENT
+        value: production
+      - key: PYTHONPATH
+        value: /opt/render/project/src
+      - key: SECRET_KEY
+        generateValue: true
+    healthCheckPath: /docs
+    autoDeploy: true
