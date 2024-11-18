@@ -1,83 +1,59 @@
+from typing import List, Dict, Optional
 import httpx
-from fastapi import HTTPException
-import os
-from typing import Dict, List, Optional
-from pydantic import BaseModel
 import asyncio
-from httpx import Timeout
-import random
-
-class PlaceDetails(BaseModel):
-    place_id: str
-    name: str
-    formatted_address: Optional[str] = None
-    latitude: Optional[float] = None
-    longitude: Optional[float] = None
-    category: Optional[str] = None
-    type: Optional[str] = None
-    importance: Optional[float] = None
-    display_name: Optional[str] = None
+from backend.schemas.places import PlaceDetails
 
 class PlacesService:
     def __init__(self):
-        self.base_url = "https://nominatim.openstreetmap.org"
-        self.timeout = Timeout(30.0, connect=10.0)
+        self.base_url = "https://maps.googleapis.com/maps/api"
+        self.api_key = os.environ.get("GOOGLE_MAPS_API_KEY")  # Get API key from environment variable
         self.client_params = {
-            "timeout": self.timeout,
-            "verify": True,
-            "follow_redirects": True,
+            "timeout": 10.0,
             "headers": {
-                "User-Agent": "TravelPlannerApp/1.0"  # Required by Nominatim
+                "User-Agent": "Smart Travel Planner/1.0"
             }
         }
-        
-    async def search_places(self, query: str, location: Optional[str] = None, type: Optional[str] = None) -> List[PlaceDetails]:
+
+    async def search_places(self, query: str, location: Optional[str] = None) -> List[PlaceDetails]:
         """
-        Search for places using text query and optional location/type.
+        Search for places using Geocoding API.
         """
         try:
             params = {
-                "q": query,
-                "format": "json",
-                "limit": 5,  # Limit results
-                "addressdetails": 1,
-                "extratags": 1
+                "address": query,
+                "key": self.api_key
             }
             
             if location:
                 # Add location bias to search
                 location_data = await self._geocode_location(location)
                 if location_data:
-                    params["viewbox"] = f"{location_data['lon']-0.1},{location_data['lat']-0.1},{location_data['lon']+0.1},{location_data['lat']+0.1}"
-                    params["bounded"] = 1
-            
-            if type:
-                params["amenity"] = type
+                    params["location"] = f"{location_data['lat']},{location_data['lon']}"
+                    params["radius"] = "5000"
             
             async with httpx.AsyncClient(**self.client_params) as client:
                 response = await client.get(
-                    f"{self.base_url}/search",
+                    f"{self.base_url}/geocode/json",
                     params=params
                 )
                 response.raise_for_status()
                 data = response.json()
                 
                 places = []
-                for place in data:
+                for result in data.get("results", []):
                     places.append(PlaceDetails(
-                        place_id=str(place.get("place_id", "")),  
-                        name=place.get("name", place.get("display_name", "Unknown")),
-                        formatted_address=place.get("display_name", ""),
-                        latitude=float(place.get("lat", 0)),
-                        longitude=float(place.get("lon", 0)),
-                        category=place.get("category", ""),
-                        type=place.get("type", ""),
-                        importance=float(place.get("importance", 0)),
-                        display_name=place.get("display_name", "")
+                        place_id=result.get("place_id", ""),
+                        name=result.get("formatted_address", "Unknown"),
+                        formatted_address=result.get("formatted_address", ""),
+                        latitude=result["geometry"]["location"]["lat"],
+                        longitude=result["geometry"]["location"]["lng"],
+                        category="location",
+                        type="address",
+                        importance=0,
+                        display_name=result.get("formatted_address", "")
                     ))
                     
-                # Add delay to respect rate limits
-                await asyncio.sleep(1)
+                await asyncio.sleep(1)  # Rate limiting
                 return places
                 
         except httpx.TimeoutException:
@@ -86,71 +62,35 @@ class PlacesService:
             raise ValueError(f"Network error while searching places: {str(e)}")
         except Exception as e:
             raise ValueError(f"Error searching places: {str(e)}")
-            
-    async def get_place_details(self, place_id: str) -> PlaceDetails:
-        """Get detailed information about a specific place."""
-        try:
-            async with httpx.AsyncClient(**self.client_params) as client:
-                response = await client.get(
-                    f"{self.base_url}/details",
-                    params={
-                        "place_id": place_id,
-                        "format": "json"
-                    }
-                )
-                response.raise_for_status()
-                place = response.json()
-                
-                # Add delay to respect rate limits
-                await asyncio.sleep(1)
-                
-                return PlaceDetails(
-                    place_id=str(place_id),  
-                    name=place.get("name", place.get("display_name", "Unknown")),
-                    formatted_address=place.get("display_name", ""),
-                    latitude=float(place.get("lat", 0)),
-                    longitude=float(place.get("lon", 0)),
-                    category=place.get("category", ""),
-                    type=place.get("type", ""),
-                    importance=float(place.get("importance", 0)),
-                    display_name=place.get("display_name", "")
-                )
-                
-        except httpx.TimeoutException:
-            raise ValueError("Connection timeout while getting place details")
-        except httpx.RequestError as e:
-            raise ValueError(f"Network error while getting place details: {str(e)}")
-        except Exception as e:
-            raise ValueError(f"Error getting place details: {str(e)}")
-            
+
     async def _geocode_location(self, location: str) -> Optional[Dict[str, float]]:
-        """Convert location string to coordinates."""
+        """Convert location string to coordinates using Geocoding API."""
         try:
             async with httpx.AsyncClient(**self.client_params) as client:
                 response = await client.get(
-                    f"{self.base_url}/search",
+                    f"{self.base_url}/geocode/json",
                     params={
-                        "q": location,
-                        "format": "json",
-                        "limit": 1
+                        "address": location,
+                        "key": self.api_key
                     }
                 )
                 response.raise_for_status()
                 data = response.json()
                 
-                if data:
+                if data.get("results"):
+                    location = data["results"][0]["geometry"]["location"]
                     return {
-                        "lat": float(data[0]["lat"]),
-                        "lon": float(data[0]["lon"])
+                        "lat": location["lat"],
+                        "lon": location["lng"]
                     }
                 return None
                 
         except (httpx.TimeoutException, httpx.RequestError):
             return None
 
-    async def get_nearby_places(self, location: str, type: str, radius: int = 5000) -> List[PlaceDetails]:
+    async def get_nearby_places(self, location: str, radius: int = 5000) -> List[PlaceDetails]:
         """
-        Find places near a location by type.
+        Find places near a location using Maps API.
         radius in meters (default 5km)
         """
         try:
@@ -158,41 +98,35 @@ class PlacesService:
             if not coords:
                 raise ValueError("Could not geocode location")
                 
-            # Convert radius from meters to degrees (approximate)
-            radius_deg = radius / 111000  # 1 degree ≈ 111km
-                
             params = {
-                "format": "json",
-                "limit": 5,
-                "amenity": type,
-                "viewbox": f"{coords['lon']-radius_deg},{coords['lat']-radius_deg},{coords['lon']+radius_deg},{coords['lat']+radius_deg}",
-                "bounded": 1
+                "location": f"{coords['lat']},{coords['lon']}",
+                "radius": str(radius),
+                "key": self.api_key
             }
             
             async with httpx.AsyncClient(**self.client_params) as client:
                 response = await client.get(
-                    f"{self.base_url}/search",
+                    f"{self.base_url}/maps/api/place/nearbysearch/json",
                     params=params
                 )
                 response.raise_for_status()
                 data = response.json()
                 
                 places = []
-                for place in data:
+                for result in data.get("results", []):
                     places.append(PlaceDetails(
-                        place_id=str(place.get("place_id", "")),  
-                        name=place.get("name", place.get("display_name", "Unknown")),
-                        formatted_address=place.get("display_name", ""),
-                        latitude=float(place.get("lat", 0)),
-                        longitude=float(place.get("lon", 0)),
-                        category=place.get("category", ""),
-                        type=place.get("type", ""),
-                        importance=float(place.get("importance", 0)),
-                        display_name=place.get("display_name", "")
+                        place_id=result.get("place_id", ""),
+                        name=result.get("name", "Unknown"),
+                        formatted_address=result.get("vicinity", ""),
+                        latitude=result["geometry"]["location"]["lat"],
+                        longitude=result["geometry"]["location"]["lng"],
+                        category=result.get("types", [""])[0],
+                        type="location",
+                        importance=0,
+                        display_name=result.get("name", "")
                     ))
                     
-                # Add delay to respect rate limits
-                await asyncio.sleep(1)
+                await asyncio.sleep(1)  # Rate limiting
                 return places
                 
         except httpx.TimeoutException:
@@ -202,5 +136,4 @@ class PlacesService:
         except Exception as e:
             raise ValueError(f"Error searching nearby places: {str(e)}")
 
-# Create singleton instance
 places_service = PlacesService()
